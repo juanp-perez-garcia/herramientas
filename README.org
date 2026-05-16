@@ -17,6 +17,7 @@ Para ejecutar este script y que funcione, hace falta java 9 o superior y tener
    #+begin_src sh
 ./descargar_docket.sh
    #+end_src
+ 
 2. Personalizar el script con las rutas del proyecto.
    - OUTPUT_DIR :: directorio donde generar los resultados de javadoc
    - SOURCE_PATH :: directorios relativos al script separados con ":" donde se
@@ -28,6 +29,7 @@ Para ejecutar este script y que funcione, hace falta java 9 o superior y tener
    - STUBS_DIR :: para poder generar la documentación en versiones antiguas de
      java. Las versiones nuevas de java no exponen estas liberas y las generaremos
      vacías para que no de errores al no encontrarlas.
+
 3. Si el proyecto usa librerías antiguas que los nuevos JDKs no exponen hay que
    crear stubs vacíos. no vamos a compilar la aplicación y no hace falta
    realmente el código pero la librería si que lo necesita aunque sea vacío para
@@ -50,6 +52,7 @@ javadoc \
     -J--add-exports=java.base/sun.security.util=ALL-UNNAMED \
     -J--add-exports=java.base/sun.security.x509=ALL-UNNAMED \
    #+end_src
+
 4. Si hay librerías de Maven o Gradle agregar esto al script
    - Script para maven que se encarga de obtener las librerías del pom.xml para
      poder generar la documentación.
@@ -65,56 +68,58 @@ javadoc \
    - Script para gradle, hay que añadir tareas en el build.gradle del proyecto
      para obtener las librerías de compilación del proyecto.
      #+begin_src sh
-    # Si detecta Gradle
-    if [ -f "build.gradle" ]; then
-     echo "Proyecto Gradle detectado. Extrayendo dependencias..."
-     # Esto requiere que el usuario tenga permisos para ejecutar gradlew
-     ./gradlew copyToLib 
-     GRADLE_LIBS="./build/libs/*.jar"
-    fi
-    #Crear Classpath dinámico, para añadir las dependencias que se encuentran en un .jar
-    cd "${PROJECT_ROOT}"
-    CLASSPATH=$(find ./fabric/build-lib -name "*.jar" | tr '\n' ':')
-    cd "${SCRIPT_ROOT}"
-    #+end_src
+# Si detecta Gradle
+if [ -f "build.gradle" ]; then
+   echo "Proyecto Gradle detectado. Extrayendo dependencias..."
+   # Esto requiere que el usuario tenga permisos para ejecutar gradlew
+   ./gradlew copyToLib 
+   GRADLE_LIBS="./build/libs/*.jar"
+fi
+#Crear Classpath dinámico, para añadir las dependencias que se encuentran en un .jar
+cd "${PROJECT_ROOT}"
+CLASSPATH=$(find ./fabric/build-lib -name "*.jar" | tr '\n' ':')
+cd "${SCRIPT_ROOT}"
+     #+end_src
   
-     - Si estamos usando gradle habra que añadir esto al proyecto
+   - Si estamos usando gradle habrá que añadir esto al proyecto
 
-       #+begin_src groovy
-      tasks.register("copyToLib", Copy) {
-      def customDir = System.getProperty("org.gradle.project.buildDir")
-      from configurations.runtimeClasspath
-      if(customDir) {
-          into file(customDir)
-      } else {
-          into "${project.layout.bildDirectory.get().asFile}/libs"
-      }
-      }
-       #+end_src 
+     #+begin_src groovy
+tasks.register("copyToLib", Copy) {
+    def customDir = System.getProperty("org.gradle.project.buildDir")
+    
+    from configurations.runtimeClasspath
+    
+    if(customDir) {
+        into file(customDir)
+    } else {
+        into "${project.layout.bildDirectory.get().asFile}/libs"
+    }
+}
+     #+end_src 
  
-     - En el caso de fabric como usa loom y expone las librerias de manera
-       diferente, hay que usar este pedazo de script junto con una tarea de gradle
-       #+begin_src sh
-      cd "${PROJECT_ROOT}"
-      ./gradlew :fabric:writeClasspath
-      CLASSPATH=$(cat fabric/build/classpath.txt)
-      cd "${ROOT}herramientas-java"
-       #+end_src
+   - En el caso de fabric como usa loom y expone las librerias de manera
+     diferente, hay que usar este pedazo de script junto con una tarea de gradle
+     #+begin_src sh
+cd "${PROJECT_ROOT}"
+./gradlew :fabric:writeClasspath
+CLASSPATH=$(cat fabric/build/classpath.txt)
+cd "${SCRIPT_ROOT}"
+     #+end_src
      
-     - Esta tarea de gradle, obtiene todas la librerías de fabric que mapeas
-       clases de Minecraft.
-       #+begin_src groovy
-      tasks.register("writeClasspath") {
-      doLast {
-          def cp = (
-              sourceSets.main.compileClasspath +
-              sourceSets.client.compileClasspath
-          ).asPath
-      
-          file("$buildDir/classpath.txt").text = cp
-      }
-      }
-       #+end_src 
+   - Esta tarea de gradle, obtiene todas la librerías de fabric que mapeas
+     clases de Minecraft.
+     #+begin_src groovy
+tasks.register("writeClasspath") {
+    doLast {
+        def cp = (
+            sourceSets.main.compileClasspath +
+            sourceSets.client.compileClasspath
+        ).asPath
+
+        file("$buildDir/classpath.txt").text = cp
+    }
+}
+     #+end_src 
      
 5. Ejecutar el script para generar el diagrama
    #+begin_src sh
@@ -138,4 +143,3 @@ Más información:
 
 - CC BY 4.0:
   https://creativecommons.org/licenses/by/4.0/
-* TODO revisar lso directorios del script
