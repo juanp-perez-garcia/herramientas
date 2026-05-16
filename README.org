@@ -1,0 +1,141 @@
+* Generar documentación java con diagramas UML
+Este script genera la documentación javadoc añadiendo los diagramar uml de las
+clases de cada paquete, con sus relaciones.
+
+* Dependencias
+Son necesarias las siguientes dependencias para ejecutar el script.
+ - Java 9 o superior.
+ - dot, del paquete Graphviz.
+ - Umldoclet del repositorio https://github.com/talsma-ict/umldoclet
+
+
+Para ejecutar este script y que funcione, hace falta java 9 o superior y tener
+=dot= en el path, viene con el paquete graphviz.
+
+* Como usar
+1. Usar el script que descarga el doclet
+   #+begin_src sh
+./descargar_docket.sh
+   #+end_src
+2. Personalizar el script con las rutas del proyecto.
+   - OUTPUT_DIR :: directorio donde generar los resultados de javadoc
+   - SOURCE_PATH :: directorios relativos al script separados con ":" donde se
+     encuentra el código acerca del cual queremos generar la documentación.
+   - PACKGES :: nombres de los paquetes acerca de los cuales se quiere generar la
+     documentación
+   - CLASSPATH :: donde se encuentran las librerías .jar necesarias para compilar
+     el proyecto.
+   - STUBS_DIR :: para poder generar la documentación en versiones antiguas de
+     java. Las versiones nuevas de java no exponen estas liberas y las generaremos
+     vacías para que no de errores al no encontrarlas.
+3. Si el proyecto usa librerías antiguas que los nuevos JDKs no exponen hay que
+   crear stubs vacíos. no vamos a compilar la aplicación y no hace falta
+   realmente el código pero la librería si que lo necesita aunque sea vacío para
+   poder crear la documentación.
+   #+begin_src sh
+STUBS_DIR="./temp_stubs"
+mkdir -p "$STUBS_DIR/sun/security/util"
+mkdir -p "$STUBS_DIR/sun/security/x509"
+mkdir -p "$STUBS_DIR/sun/security/provider"
+
+echo "package sun.security.util; public class DerOutputStream extends java.io.OutputStream { public void write(int b) {} }" > "$STUBS_DIR/sun/security/util/DerOutputStream.java"
+echo "package sun.security.util; public class DerValue {}" > "$STUBS_DIR/sun/security/util/DerValue.java"
+echo "package sun.security.util; public class ObjectIdentifier {}" > "$STUBS_DIR/sun/security/util/ObjectIdentifier.java"
+echo "package sun.security.x509; public class AlgorithmId {}" > "$STUBS_DIR/sun/security/x509/AlgorithmId.java"
+echo "package sun.security.provider; public class X509Factory {}" > "$STUBS_DIR/sun/security/provider/X509Factory.java"
+   #+end_src
+   y hay que añadir al comando javadoc estas opciones
+   #+begin_src sh
+javadoc \
+    -J--add-exports=java.base/sun.security.util=ALL-UNNAMED \
+    -J--add-exports=java.base/sun.security.x509=ALL-UNNAMED \
+   #+end_src
+4. Si hay librerías de Maven o Gradle agregar esto al script
+   - Script para maven que se encarga de obtener las librerías del pom.xml para
+     poder generar la documentación.
+     #+begin_src sh
+    # Si detecta un archivo pom.xml, extrae las dependencias a una carpeta temporal
+    if [ -f "pom.xml" ]; then
+     echo "Proyecto Maven detectado. Extrayendo dependencias..."
+     mvn dependency:copy-dependencies -DoutputDirectory="./temp_libs" -Dsilent=true
+     MAVEN_LIBS="./temp_libs/*.jar"
+    fi
+    
+    #+end_src
+   - Script para gradle, hay que añadir tareas en el build.gradle del proyecto
+     para obtener las librerías de compilación del proyecto.
+     #+begin_src sh
+    # Si detecta Gradle
+    if [ -f "build.gradle" ]; then
+     echo "Proyecto Gradle detectado. Extrayendo dependencias..."
+     # Esto requiere que el usuario tenga permisos para ejecutar gradlew
+     ./gradlew copyToLib 
+     GRADLE_LIBS="./build/libs/*.jar"
+    fi
+    #Crear Classpath dinámico, para añadir las dependencias que se encuentran en un .jar
+    cd "${PROJECT_ROOT}"
+    CLASSPATH=$(find ./fabric/build-lib -name "*.jar" | tr '\n' ':')
+    cd "${SCRIPT_ROOT}"
+    #+end_src
+  
+     - Si estamos usando gradle habra que añadir esto al proyecto
+
+       #+begin_src groovy
+      tasks.register("copyToLib", Copy) {
+      def customDir = System.getProperty("org.gradle.project.buildDir")
+      from configurations.runtimeClasspath
+      if(customDir) {
+          into file(customDir)
+      } else {
+          into "${project.layout.bildDirectory.get().asFile}/libs"
+      }
+      }
+       #+end_src 
+ 
+     - En el caso de fabric como usa loom y expone las librerias de manera
+       diferente, hay que usar este pedazo de script junto con una tarea de gradle
+       #+begin_src sh
+      cd "${PROJECT_ROOT}"
+      ./gradlew :fabric:writeClasspath
+      CLASSPATH=$(cat fabric/build/classpath.txt)
+      cd "${ROOT}herramientas-java"
+       #+end_src
+     
+     - Esta tarea de gradle, obtiene todas la librerías de fabric que mapeas
+       clases de Minecraft.
+       #+begin_src groovy
+      tasks.register("writeClasspath") {
+      doLast {
+          def cp = (
+              sourceSets.main.compileClasspath +
+              sourceSets.client.compileClasspath
+          ).asPath
+      
+          file("$buildDir/classpath.txt").text = cp
+      }
+      }
+       #+end_src 
+     
+5. Ejecutar el script para generar el diagrama
+   #+begin_src sh
+./generar-diagrama.sh
+   #+end_src
+
+* Licencia
+Salvo que se indique lo contrario:
+
+- Los scripts y fragmentos de código de este proyecto están
+  licenciados bajo la licencia MIT.
+
+- La documentación y textos explicativos contenidos en este
+  README están licenciados bajo Creative Commons Attribution
+  4.0 International (CC BY 4.0).
+
+Más información:
+
+- MIT License:
+  https://opensource.org/licenses/MIT
+
+- CC BY 4.0:
+  https://creativecommons.org/licenses/by/4.0/
+* TODO revisar lso directorios del script
