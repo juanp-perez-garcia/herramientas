@@ -6,9 +6,10 @@
   documentación con javadoc y añadiendo diagramas de clases creados con
   plantuml.
   
-** Certificados ssl seguros en local
+** Certificados SSL seguros en local
 
-- README :: Pequeña herramienta para 
+- [[file:certs/README.org][README]] :: Pequeña herramienta para instalar un certificado autorizador y
+  generar certificados web reconocidos.
 * Licencia
 Salvo que se indique lo contrario:
 

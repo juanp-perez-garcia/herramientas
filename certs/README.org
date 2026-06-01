@@ -1,0 +1,48 @@
+#+title: Certificados
+
+* Certificados web
+
+Son documentos digitales que sirven para confirmar que un sitio web es seguro.
+Emitidos por entidades de confianza sirven para crear conexiones seguras entre
+equipos, usando sus claves para cifrar el trafico de protocolos como HTTPS.
+
+** MkCert
+Esta herramienta genera un certificado =CA= /Autoridad de Certificación/ y lo
+instala en el sistema para que pueda reconocer los certificados que firma el
+propio equipo como seguros. Se puede descargar desde [[https://github.com/FiloSottile/mkcert/releases][Mkcert]].
+
+- Instalar el =CA= para que el sistema confié en los certificados generados por
+  nosotros mismos.
+  #+begin_src shell
+mkcert -install
+  #+end_src
+  
+- Generar certificados para los dominios y direcciones que queramos usar.
+  #+begin_src shell
+mkcert localhost midominiolocal 127.0.0.1 ::1
+  #+end_src
+  este comando genera dos archivos, uno ~*.pem~ que es el certificado publico y
+  otro ~*-key.pem~ que es la parte privada del certificado.
+
+- Desinstalar el =CA= para invalidar los certificados expedidos
+  #+begin_src shell
+mkcert -uninstall
+  #+end_src
+
+* Licencia
+Salvo que se indique lo contrario:
+
+- Los scripts y fragmentos de código de este proyecto están
+  licenciados bajo la licencia MIT.
+
+- La documentación y textos explicativos contenidos en este
+  README están licenciados bajo Creative Commons Attribution
+  4.0 International (CC BY 4.0).
+
+Más información:
+
+- MIT License:
+  https://opensource.org/licenses/MIT
+
+- CC BY 4.0:
+  https://creativecommons.org/licenses/by/4.0/
