@@ -1,0 +1,59 @@
+#+OPTIONS: title:nil author:nil date:nil
+#+TITLE: Org to docx
+#+AUTHOR: Juan Pablo Pérez García
+#+TIPO_DOCUMENTO: Manual
+#+VERSION: 1.0
+#+DATE: 2026-07-06
+#+NIVEL_SEGURIDAD: Publico
+#+INSERT_CONTENT_HERE: {{ INSERT_CONTENT_HERE }}
+* Org To Docx
+Función en /emacs-lisp/ para exportar un documento org como este a un documento de
+Word365 utilizando una plantilla de referencia.
+
+Añadiendo a la plantilla marcadores de posición del tipo /{{ MARCADOR }}/ estos
+son sustituidos por las propiedades del documento del tipo /#+MARCADOR: valor del
+marcador/.
+
+Y el resto del contenido del documento .org sera exportado con pandoc utilizando
+la plantilla como documento de referencia para respetar los estilos y que se
+integre perfectamente. Tras esta exportación hay que abrir el documento generado
+y actualizar algún detalle como el índice.
+  
+** Dependencias, instalar con pip dentro del entorno virtual para no romper los
+paquetes del sistema.
+#+begin_src shell
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+#+end_src
+  
+En la distribución de Ubuntu que tiene WSL puede ser necesario utilizar =uv= en
+vez de el paquete =venv=, los dos crean la carpeta con el entorno 
+  
+
+* Paquete de emacs-lisp
+
+Este paquete tiene una función que ejecuta una llamada al script de python
+pasándole las variables del documento como metadatos y que el script pueda
+sustituir los marcadores de posición y las direcciones del documento org para
+poder exportarlo con pandoc desde python.
+
+También contiene una función intermedia para poder llamar al backend de
+exportación desde el sistema de exportación de org-mode /org-export-dispatch/.
+
+
+* Script de python
+
+Este script necesita su propio entorno para no corromper sin querer el entorno
+global de algunas distribuciones linux y evitar romper el sistema.
+
+El script rellena el contenido en dos pasos y necesita que le pasemos que le
+pasemos =#+INSERT_CONTENT_HERE: {{ INSERT_CONTENT_HERE }}= para que el primer paso
+no lo borre.
+
+El primer paso rellena la plantilla con los metadatos del documento .org tanto
+los genéricos de org-mode como =#+AUTHOR:= y los personalizados como
+=#+TIPO_DOCUMENTO=. El siguiente paso hace dos cosas, generar el documento .docx
+con pandoc usando los estilos de la plantilla y después busca la etiqueta ={{
+INSERT_CONTENT_HERE }}= para reemplazarla por el contenido del documento
+exportado con pandoc.
