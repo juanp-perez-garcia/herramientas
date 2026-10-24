@@ -1,0 +1,16 @@
+services:
+  org-to-docx:
+    build: .
+    volumes:
+      - .:/app
+      - ./elisp:/app/elisp
+      - ./scripts:/app/scripts
+      - ./01-markdown:/app/01-markdown
+      - ./02-org_mode:/app/02-org_mode
+      - ./03-docx:/app/03-docx
+      - ./templates:/app/templates
+    environment:
+      - PYTHONPATH=/app
+      - PROJECT_ROOT=/app
+    # Example command to run the export:
+    # command: /app/input/documento.org /app/templates/plantilla.docx /app/output/documento.docx

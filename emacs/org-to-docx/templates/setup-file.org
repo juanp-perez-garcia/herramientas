@@ -1,0 +1,8 @@
+#+OPTIONS: toc:nil
+#+DOCX_TEMPLATE: /app/templates/template.docx
+#+TITLE: Titulo
+#+AUTHOR: Juan Pablo
+#+VERSION: 1.0
+#+DATE: 2026-10-23
+#+LANGUAGE: es
+#+INSERT_CONTENT_HERE: {{ INSERT_CONTENT_HERE }}

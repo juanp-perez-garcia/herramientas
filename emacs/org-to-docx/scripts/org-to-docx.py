@@ -46,17 +46,21 @@ def main():
     # Renderizar la plantilla
     try:
         # Renderizar primero metadatos de la plantilla excepto el {{ INSERT_CONTENT_HERE }}
+        print("Preparando renderizando metadatos")
         doc = DocxTemplate(args.template)
         context = metadata.copy()
         #print("Context:", context)
+        print("render y save")
         doc.render(context)
         doc.save(args.output)
 
         # Cargar el documento con python-docx para inspeccionar los parrafos
+        print("Cargar documento con python-docx")
         base_doc = Document(args.output)
         doc_content = Document(content_path)
 
         # Buscar el íncide (int) del párrafo que contiene la etiqueta
+        print("Busar el indice del parrafo")
         target_index = None
         etiqueta_buscada = "{{ INSERT_CONTENT_HERE }}"
 

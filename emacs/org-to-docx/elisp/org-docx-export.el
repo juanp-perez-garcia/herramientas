@@ -25,14 +25,14 @@
 (require 'json)
 (require 'ox)  ; para org-export-get-environment
 
-(defcustom org-docx-export-template-script
-  (expand-file-name "~/develop/herramientas/emacs/org-to-docx/scripts/org-to-docx.py")
+(defcustom org-docx-export-template-script "../scripts/org-to-docx.py"
+  ;; (expand-file-name "scripts/org-to-docx.py" (or (getenv "PROJECT_ROOT") "~/develop/herramientas/emacs/org-to-docx/"))
   "Ruta al script Python que procesa la plantilla DOCX."
   :type 'file
   :group 'org-export)
 
-(defcustom org-docx-export
-  (expand-file-name "~/develop/herramientas/emacs/org-to-docx/")
+(defcustom org-docx-export "../scripts/"
+  ;; (expand-file-name (or (getenv "PROJECT_ROOT") "~/develop/herramientas/emacs/org-to-docx/"))
   "Ruta al script Python que procesa la plantilla DOCX."
   :type 'file
   :group 'org-export)
@@ -90,24 +90,30 @@ Interactivo: solicita la plantilla y el destino."
             (insert (json-encode (mapcar (lambda (pair) (cons (car pair) (cdr pair))) props))))
 
           ;; Ejecutar el script dentro del entorno virtual
-          (let* ((venv-dir (expand-file-name ".venv" org-docx-export))
+          (let* (
+                 ;; (venv-dir (expand-file-name ".venv" org-docx-export))
                  ;; TODO mover esto a una variable
                  ;; para wsl windows (format "VIRTUAL_ENV=%s uv run")
                  ;; para mi linux (format ". %s/bin/activate &&")
-                 (activate-cmd (format ". %s/bin/activate &&" venv-dir))     ; "." es POSIX (equivale a source)
+                 ;; (activate-cmd (if (file-exists-p venv-dir)
+                 ;;                   (format ". %s/bin/activate &&" venv-dir)
+                 ;;                 ""))
                  (export-cmd (format "python %s --org-file %s --template %s --output %s --metadata %s"
                               (shell-quote-argument org-docx-export-template-script)
                               (shell-quote-argument org-file)
                               (shell-quote-argument template)
                               (shell-quote-argument output)
                               (shell-quote-argument metadata-file)))
-                 (full-cmd (concat activate-cmd export-cmd))
+                 ;; (full-cmd (concat activate-cmd export-cmd))
+                 (full-cmd (concat "" export-cmd))
                  (output-buffer (get-buffer-create "*Python Script Output*")))
-            (message (format "venv-dir: %s" venv-dir))
+            ;; (message (format "venv-dir: %s" venv-dir))
             (setq exit-code (call-process-shell-command full-cmd nil output-buffer nil))
             (if (= exit-code 0)
                 (message "Documento generado correctamente: %s" output)
-              (error "Error al ejecutar el script (Código %d) full-cmd: %s" exit-code full-cmd))))
+              (message "=== Salida de Python ===\n%s\n=== Fin ==="
+                       (with-current-buffer output-buffer (buffer-string)))
+              (error "Error al ejecutar el script (Código %d)" exit-code))))
       (when (file-exists-p metadata-file)
         (delete-file metadata-file)))))
 
@@ -117,6 +123,7 @@ Interactivo: solicita la plantilla y el destino."
   :menu-entry
   '(?d "Exportar a DOCX vía Plantilla"
        ((?d "A archivo DOCX" org-docx-export-to-docx))))
+
 ;; Funcion puente entre mi exportador y org-export-dispatch
 (defun org-docx-export-to-docx (&optional async subtreep visibleonly ext-plist)
   "Función de entrada para el backend \='docx-template\='.
@@ -131,9 +138,13 @@ ASYNC SUBTREEP VISIBLEONLY EXT-PLIST"
   (let* ((pub-dir (or (plist-get ext-plist :publishing-directory)
                       default-directory))
          (filename (org-export-output-file-name ".docx" subtreep pub-dir))
-         ;; Solicitamos la plantilla interactivamente si no está preconfigurada
-         (template (expand-file-name
-                    (read-file-name "Plantilla DOCX: " nil nil t))))
+         ;; Buscar propiedad DOCX_TEMPLATE
+         (props (org-docx-export-get-all-properties))
+         (template-prop (cdr (assoc "DOCX_TEMPLATE" props)))
+         ;; Seleccionar plantilla: si existe propiedad y el archivo, usarla directamente.
+         (template (if (and template-prop (file-exists-p template-prop))
+                       template-prop
+                     (read-file-name "Plantilla DOCX: " nil template-prop t))))
     
     (if async
         (org-export-async-start
