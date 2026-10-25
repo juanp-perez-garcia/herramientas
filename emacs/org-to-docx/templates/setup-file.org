@@ -1,4 +1,4 @@
-#+OPTIONS: toc:nil
+#+OPTIONS: toc:nil author:nil date:nil
 #+DOCX_TEMPLATE: /app/templates/template.docx
 #+TITLE: Titulo
 #+AUTHOR: Juan Pablo
