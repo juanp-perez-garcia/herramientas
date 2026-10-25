@@ -10,11 +10,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
-COPY elisp/ elisp/
-COPY scripts/ scripts/
-RUN chmod +x scripts/entry-point.sh
-RUN chmod +x scripts/md-to-org.sh
-RUN chmod +x scripts/run-export.sh
+# COPY elisp/ elisp/
+# COPY scripts/ scripts/
+# RUN chmod +x scripts/entry-point.sh
+# RUN chmod +x scripts/md-to-org.sh
+# RUN chmod +x scripts/run-export.sh
 
 # Set environment
 ENV PYTHONPATH=/app
